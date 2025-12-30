@@ -1,0 +1,1666 @@
+<!doctype html>
+<html lang="th" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iFEMs SMART HOSPITAL Version 2.0.1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+        body {
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+            background: #0a0a0f;
+            min-height: 100%;
+        }
+        html, body { height: 100%; margin: 0; }
+        
+        .page { display: none; }
+        .page.active { display: flex; flex-direction: column; height: 100%; }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .gradient-primary { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%); }
+        .gradient-success { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); }
+        .gradient-warning { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); }
+        .gradient-danger { background: linear-gradient(135deg, #ef4444 0%, #f87171 100%); }
+        .gradient-cyan { background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%); }
+        
+        .text-gradient {
+            background: linear-gradient(135deg, #6366f1 0%, #d946ef 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(30px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+        }
+        
+        .side-nav {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            bottom: 0;
+            width: 70px;
+            background: rgba(15, 15, 25, 0.95);
+            backdrop-filter: blur(30px);
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            padding: 16px 8px;
+            gap: 8px;
+            transform: translateX(-50px);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .side-nav:hover {
+            transform: translateX(0);
+            width: 120px;
+        }
+        .side-nav:hover .nav-pill span {
+            opacity: 1;
+            max-width: 80px;
+        }
+        .nav-pill {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .nav-pill span {
+            opacity: 0;
+            max-width: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .nav-pill:hover { 
+            color: rgba(255, 255, 255, 0.8); 
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .nav-pill.active {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+        }
+        .nav-pill i { font-size: 20px; }
+        
+        .alarm-nav-btn {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%) !important;
+            color: white !important;
+            animation: alarm-nav-pulse 1s ease-in-out infinite !important;
+        }
+        @keyframes alarm-nav-pulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); transform: scale(1); }
+            50% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.9); transform: scale(1.08); }
+        }
+        
+        .page-content {
+            margin-top: 60px;
+            margin-left: 24px;
+            padding: 16px 20px;
+            height: calc(100% - 60px);
+            overflow-y: auto;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #page-auth { margin-top: 0; margin-left: 0; height: 100%; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 200; background: #0a0a0f; }
+        #page-auth:not(.active) { display: none !important; }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 24px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        .card-glow { box-shadow: 0 0 60px rgba(99, 102, 241, 0.1); }
+        
+        .input-modern {
+            width: 100%;
+            padding: 18px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            font-size: 15px;
+            color: white;
+            transition: all 0.3s ease;
+            font-family: 'Outfit', sans-serif;
+        }
+        .input-modern::placeholder { color: rgba(255, 255, 255, 0.3); }
+        .input-modern:focus {
+            outline: none;
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.2);
+        }
+        .input-modern option { background: #1a1a2e; color: white; }
+        
+        .input-group { position: relative; }
+        .toggle-pass {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .toggle-pass:hover { color: rgba(255, 255, 255, 0.8); }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            padding: 18px 32px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(99, 102, 241, 0.5);
+        }
+        
+        .tab-modern {
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .tab-modern:hover { background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.8); }
+        .tab-modern.active {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+        }
+        
+        .iframe-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 500px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 24px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .iframe-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            transform: scale(0.7);
+            transform-origin: top left;
+        }
+        .zoom-controls {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            z-index: 10;
+            display: flex;
+            gap: 8px;
+        }
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            color: white;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .zoom-btn:hover { background: rgba(99, 102, 241, 0.6); transform: scale(1.05); }
+        
+        .lang-toggle {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 4px;
+            gap: 4px;
+        }
+        .lang-btn {
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .lang-btn.active {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+        }
+        
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page.active { animation: fadeUp 0.4s ease; }
+        
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.6); }
+        }
+        .pulse-glow { animation: pulse-glow 2s infinite; }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .float { animation: float 3s ease-in-out infinite; }
+        
+        .app-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .app-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        .app-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        
+        .ai-system-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .ai-system-card:hover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+        
+        .toast {
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 16px;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            z-index: 9999;
+            animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 350px;
+            backdrop-filter: blur(20px);
+        }
+        .toast-success { background: rgba(16, 185, 129, 0.9); }
+        .toast-error { background: rgba(239, 68, 68, 0.9); }
+        .toast-warning { background: rgba(245, 158, 11, 0.9); }
+        @keyframes slideIn {
+            from { transform: translateX(120%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+        
+        .admin-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+        }
+        .admin-table thead th {
+            padding: 16px 20px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.4);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .admin-table tbody tr { background: rgba(255, 255, 255, 0.02); transition: all 0.2s; }
+        .admin-table tbody tr:hover { background: rgba(255, 255, 255, 0.05); }
+        .admin-table tbody td { padding: 16px 20px; font-size: 13px; color: rgba(255, 255, 255, 0.8); }
+        .admin-table tbody td:first-child { border-radius: 12px 0 0 12px; }
+        .admin-table tbody td:last-child { border-radius: 0 12px 12px 0; }
+        
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(217, 70, 239, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        @keyframes alarm-flash {
+            0%, 100% { border-color: rgba(239, 68, 68, 0.3); box-shadow: 0 0 20px rgba(239, 68, 68, 0.2); }
+            50% { border-color: rgba(239, 68, 68, 0.8); box-shadow: 0 0 40px rgba(239, 68, 68, 0.6); }
+        }
+        .alarm-flash { animation: alarm-flash 1s ease-in-out infinite; border: 2px solid rgba(239, 68, 68, 0.5) !important; }
+
+        .live-monitor-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 20px;
+        }
+
+        .monitoring-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse-dot 1.5s ease-in-out infinite;
+        }
+
+        .settings-input {
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s;
+        }
+        .settings-input:focus { outline: none; border-color: #6366f1; background: rgba(99, 102, 241, 0.1); }
+        .settings-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .setup-guide {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+        .setup-guide h4 {
+            color: #a5b4fc;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .setup-guide ol {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 11px;
+            padding-left: 16px;
+            line-height: 1.8;
+        }
+        .setup-guide code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #22d3ee;
+        }
+
+	/* ปุ่มควบคุมการซูมสำหรับ Dashboard */
+	.zoom-controls-overlay {
+   	 position: absolute;
+   	 top: 10px;
+   	 right: 130px; /* เว้นที่ให้ปุ่ม Full Screen เดิม */
+   	 display: flex;
+   	 gap: 6px;
+   	 z-index: 50;
+	}
+	.btn-zoom {
+	    width: 32px;
+	    height: 32px;
+ 	   background: rgba(0, 0, 0, 0.5);
+ 	   backdrop-filter: blur(8px);
+ 	   border: 1px solid rgba(255, 255, 255, 0.1);
+    	border-radius: 8px;
+  	  color: white;
+   	 font-size: 12px;
+   	 display: flex;
+  	  align-items: center;
+  	  justify-content: center;
+   	 transition: all 0.2s;
+   	 cursor: pointer;
+	}
+	.btn-zoom:hover { background: #6366f1; border-color: #8b5cf6; }
+	.zoom-level-tag {
+ 	   background: rgba(0, 0, 0, 0.5);
+   	 padding: 0 10px;
+   	 border-radius: 8px;
+   	 color: #a5b4fc;
+   	 font-size: 10px;
+  	  display: flex;
+   	 align-items: center;
+  	  font-weight: bold;
+   	 border: 1px solid rgba(255, 255, 255, 0.1);
+	}
+    
+</style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full overflow-auto">
+  <div class="bg-pattern"></div><!-- TOP NAVIGATION -->
+  <header id="main-header" class="top-nav hidden">
+   <div class="flex items-center gap-4">
+    <div class="w-12 h-12 rounded-xl bg-white/10 p-1.5 flex items-center justify-center">
+     <div id="qrcode" class="w-full h-full"></div>
+    </div>
+    <div>
+     <h1 id="main-title" class="text-lg font-bold text-white tracking-tight">iFEMs SMART HOSPITAL</h1>
+     <p class="text-[10px] text-white/40 font-medium">Ver 2.7.0 | <span id="user-display-name" class="text-purple-400"></span></p>
+    </div>
+   </div>
+   <div class="flex items-center gap-4">
+    <div id="header-time-en" class="text-xs text-white/50 font-medium hidden md:block"></div>
+    <div class="lang-toggle"><button onclick="changeLang('th')" class="lang-btn active">TH</button> <button onclick="changeLang('en')" class="lang-btn">EN</button>
+    </div><button onclick="doLogout()" class="w-10 h-10 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center" aria-label="Logout"> <i class="fa-solid fa-right-from-bracket"></i> </button>
+   </div>
+  
+</header><!-- LOGIN PAGE -->
+  <div id="page-auth" class="page active min-h-screen flex items-center justify-center p-6">
+   <div class="absolute top-6 right-6 lang-toggle"><button onclick="changeLang('th')" class="lang-btn active">TH</button> <button onclick="changeLang('en')" class="lang-btn">EN</button>
+   </div>
+   <div class="w-full max-w-md">
+    <div class="text-center mb-10">
+     <div class="w-24 h-24 mx-auto mb-6 rounded-3xl gradient-primary flex items-center justify-center pulse-glow float"><i class="fa-solid fa-hospital text-4xl text-white"></i>
+     </div>
+     <h1 class="text-3xl font-bold text-white mb-2">iFEMs SMART</h1>
+     <p class="text-white/40 text-sm font-medium tracking-widest uppercase">Hospital Management System</p>
+    </div>
+    <div id="view-login" class="card card-glow">
+     <h2 class="text-xl font-bold text-white mb-8 text-center" data-lang="login_header">เข้าสู่ระบบ</h2>
+     <form id="login-form" class="space-y-5">
+      <div><label for="login-email" class="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">Username / Email</label> <input type="text" id="login-email" class="input-modern" placeholder="กรอกชื่อผู้ใช้" autocomplete="username">
+      </div>
+      <div class="input-group"><label for="login-pass" class="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">Password</label> <input type="password" id="login-pass" class="input-modern" placeholder="กรอกรหัสผ่าน" autocomplete="current-password"> <i class="fa-solid fa-eye toggle-pass" onclick="togglePassword('login-pass', this)"></i>
+      </div><button type="submit" class="btn-primary w-full mt-4" data-lang="btn_signin">เข้าสู่ระบบ</button>
+      <p class="text-sm text-center text-purple-400 cursor-pointer pt-4 hover:text-purple-300 transition font-medium" onclick="toggleAuth('reg')">ยังไม่มีบัญชี? ลงทะเบียนใหม่</p>
+     </form>
+    </div>
+    <div id="view-register" class="card card-glow hidden">
+     <h2 class="text-xl font-bold text-white mb-8 text-center">ลงทะเบียนพนักงาน</h2>
+     <form id="register-form" class="space-y-4">
+      <div><label for="reg-name" class="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">ชื่อ-นามสกุล</label> <input type="text" id="reg-name" class="input-modern" placeholder="กรอกชื่อ-นามสกุล">
+      </div>
+      <div><label for="reg-email" class="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">Username / Email</label> <input type="text" id="reg-email" class="input-modern" placeholder="กำหนดชื่อผู้ใช้">
+      </div>
+      <div class="input-group"><label for="reg-pass" class="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">Password</label> <input type="password" id="reg-pass" class="input-modern" placeholder="กำหนดรหัสผ่าน"> <i class="fa-solid fa-eye toggle-pass" onclick="togglePassword('reg-pass', this)"></i>
+      </div>
+      <div><label for="reg-building" class="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">อาคาร</label> <select id="reg-building" class="input-modern"> 
+<option value="ViMUT Hospital (VM)">VH (ViMUT Hospital)</option> 
+<option value="ViMUT-Theptarin (VTH)">VTH (ViMUT-Theptarin)</option> 
+<option value="ViMUT-BaNNMOR Clinic (VBC)">VBC (ViMUT-BaNNMOR Clinic)</option> 
+<option value="ViMUT-GEMO Wellness (VGW)">VGW (ViMUT-GEMO Wellness)</option> 
+<option value="ViMUT-Watcharapol Wellness (VWW)">VWW (ViMUT-Watcharapol Wellness)</option> 
+<option value="ViMUT-Bearing Wellness (VBW)">VBW (ViMUT-Bearing Wellness)</option> 
+<option value="ALL">ALL (รับผิดชอบทุกอาคาร)</option> </select>
+      </div><button type="submit" class="btn-primary w-full gradient-success mt-4" style="box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);">ส่งคำขอลงทะเบียน</button>
+      <p class="text-sm text-center text-white/40 cursor-pointer pt-4 hover:text-white/60 transition" onclick="toggleAuth('login')">← กลับหน้าเข้าสู่ระบบ</p>
+     </form>
+    </div>
+   </div>
+  
+</div><!-- SIDE NAVIGATION -->
+  <nav id="main-nav" class="side-nav hidden" aria-label="Main Navigation">
+   <div onclick="switchPage('page-monitor', this)" class="nav-pill active"><i class="fa-solid fa-chart-line"></i> <span>Monitor</span>
+   </div>
+   <div onclick="switchPage('page-iot', this)" class="nav-pill"><i class="fa-solid fa-microchip"></i> <span>IoT</span>
+   </div>
+   <div onclick="switchPage('page-ai', this)" class="nav-pill"><i class="fa-solid fa-brain"></i> <span>AI</span>
+   </div>
+   <div onclick="switchPage('page-apps', this)" class="nav-pill"><i class="fa-solid fa-mobile-screen"></i> <span>Apps</span>
+   </div>
+   <div id="admin-nav-item" onclick="switchPage('page-admin', this)" class="nav-pill hidden"><i class="fa-solid fa-shield-halved"></i> <span>Admin</span>
+   </div>
+   <div id="alarm-nav-item" onclick="goToAlarmPage()" class="nav-pill alarm-nav-btn hidden"><i class="fa-solid fa-bell fa-shake"></i> <span>ALARM</span>
+   </div>
+  
+</nav><!-- MONITOR PAGE -->
+  <main id="page-monitor" class="page">
+   <div class="page-content">
+    <div class="max-w-7xl mx-auto">
+     <header class="mb-3">
+      <h2 class="text-xl font-bold text-white mb-1">Dashboard Monitor</h2>
+      <p class="text-white/40 text-xs">Real-time data visualization and analytics</p>
+     </header>
+     <div id="monitor-tabs" class="flex flex-nowrap overflow-x-auto gap-2 pb-2 no-scrollbar mb-3"></div>
+         <div id="monitor-display" class="w-full relative min-h-[600px]"></div>
+     <div id="monitor-display" class="card" style="height: calc(100% - 70px); min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+      <div id="monitor-icon" class="w-24 h-24 rounded-3xl gradient-primary flex items-center justify-center mb-6 float"><i class="fa-solid fa-chart-line text-5xl text-white"></i>
+      </div>
+      <h3 id="monitor-name" class="text-2xl font-bold text-white mb-2">เลือก Dashboard</h3>
+      <p id="monitor-building" class="text-white/40 text-sm mb-6">กรุณาเลือก Dashboard จากแท็บด้านบน</p>
+	</div>
+    </div>
+   </div>
+  
+</main><!-- IoT PAGE -->
+  <main id="page-iot" class="page">
+   <div class="page-content">
+    <div class="max-w-7xl mx-auto">
+     <header class="mb-3">
+      <h2 class="text-xl font-bold text-white mb-1"><span class="text-gradient">IoT</span> Dashboard</h2>
+      <p class="text-white/40 text-xs">Real-time sensor monitoring and control</p>
+     </header>
+     <div class="iframe-container" style="height: calc(100% - 50px); min-height: 400px;">
+      <div class="zoom-controls"><button class="zoom-btn" onclick="adjustZoom('iot', 0.1)" aria-label="Zoom In">
+	<i class="fa-solid fa-plus"></i></button> 
+	<button class="zoom-btn" onclick="adjustZoom('iot', -0.1)" aria-label="Zoom Out">
+	<i class="fa-solid fa-minus"></i></button>
+      </div><iframe id="iframe-iot" src="https://www.modelaaiot.com/dashboard/JdIcXHOF4gG3smYXyF5V" title="IoT Dashboard"></iframe>
+     </div>
+    </div>
+   </div>
+  
+</main><!-- APPS PAGE -->
+  <main id="page-apps" class="page">
+   <div class="page-content">
+    <div class="max-w-7xl mx-auto">
+     <header class="mb-3">
+      <h2 class="text-xl font-bold text-white mb-1">Applications</h2>
+      <p class="text-white/40 text-xs">Mobile data recording &amp; management tools</p>
+     </header>
+     <div id="app-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+   </div>
+  
+</main><!-- AI ANALYSIS PAGE -->
+  <main id="page-ai" class="page">
+   <div class="page-content">
+    <div class="max-w-4xl mx-auto">
+     <header class="text-center mb-4">
+      <div class="w-14 h-14 mx-auto mb-3 rounded-xl gradient-success flex items-center justify-center"><i class="fa-solid fa-brain text-2xl text-white"></i>
+      </div>
+      <h2 class="text-xl font-bold text-white mb-1">AI Auto Monitoring</h2>
+      <p class="text-white/40 text-xs">ระบบตรวจสอบอัตโนมัติ — ดึงข้อมูลจาก Google Sheet ทุก 30 วินาที</p>
+     </header><!-- Settings Panel - Admin Only -->
+     <div id="settings-panel" class="card border border-yellow-500/30 mb-4 hidden">
+      <div class="flex items-center gap-3 mb-4">
+       <div class="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center"><i class="fa-solid fa-sliders text-yellow-400"></i>
+       </div>
+       <div>
+        <h3 class="text-white font-bold text-sm">⚙️ ตั้งค่าระบบ (Admin Only)</h3>
+        <p class="text-white/40 text-xs">ปรับ Threshold และ Google Chat Notification</p>
+       </div>
+      </div>
+      <div class="grid grid-cols-1 gap-4"><!-- Threshold Setting -->
+       <div class="bg-black/30 rounded-xl p-4"><label for="threshold-input" class="block text-white/60 text-xs font-semibold mb-2"> <i class="fa-solid fa-gauge-high mr-1"></i> ค่า Threshold (kW/TR) </label>
+        <div class="flex items-center gap-3"><input type="number" id="threshold-input" step="0.01" min="0.1" max="2" value="0.75" class="settings-input flex-1"> <button onclick="saveThreshold()" class="px-4 py-3 rounded-xl text-xs font-bold bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500 hover:text-white transition"> <i class="fa-solid fa-save mr-1"></i> บันทึก </button>
+        </div>
+        <p class="text-white/30 text-xs mt-2">ค่าปัจจุบัน: <span id="current-threshold" class="text-yellow-400 font-bold">0.75</span></p>
+       
+</div><!-- Google Apps Script URL Setting -->
+       <div class="bg-black/30 rounded-xl p-4"><label for="gchat-webhook-input" class="block text-white/60 text-xs font-semibold mb-2"> <i class="fa-brands fa-google mr-1"></i> Google Apps Script URL (สำหรับส่ง Google Chat) </label>
+        <p class="text-amber-400/80 text-[10px] mb-2">⚡ ใช้ Apps Script เป็นตัวกลาง แก้ปัญหา CORS ที่ Browser บล็อก</p>
+        <div class="flex items-center gap-3"><input type="text" id="gchat-webhook-input" placeholder="https://script.google.com/macros/s/xxxxx/exec" class="settings-input flex-1 text-xs"> <button onclick="saveGChatWebhook()" class="px-4 py-3 rounded-xl text-xs font-bold bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition"> <i class="fa-solid fa-save mr-1"></i> บันทึก </button>
+        </div>
+        <div class="flex items-center justify-between mt-2">
+         <p class="text-white/30 text-xs">สถานะ: <span id="gchat-status" class="text-white/50">ยังไม่ได้ตั้งค่า</span></p><button onclick="testGChat()" class="text-xs text-cyan-400 hover:text-cyan-300 transition"> <i class="fa-solid fa-paper-plane mr-1"></i> ทดสอบส่ง </button>
+        </div><!-- Setup Guide -->
+        <div class="setup-guide">
+         <h4>📖 วิธีสร้าง Google Apps Script:</h4>
+         <ol>
+          <li>ไปที่ <code>script.google.com</code> สร้าง Project ใหม่</li>
+          <li>วางโค้ด Apps Script (ขอจาก Admin หรือดูคู่มือ)</li>
+          <li>ใส่ <b>Google Chat Webhook URL</b> ในโค้ด Apps Script</li>
+          <li>Deploy → New deployment → <b>Web app</b></li>
+          <li>Execute as: <b>Me</b> | Who has access: <b>Anyone</b></li>
+          <li>Copy URL มาวางในช่องด้านบน ✅</li>
+         </ol>
+        </div>
+       </div>
+      
+</div><!-- Google Chat Enable/Disable -->
+      <div class="mt-4 flex items-center justify-between bg-black/20 rounded-xl p-3">
+       <div class="flex items-center gap-3"><i class="fa-brands fa-google text-blue-400 text-xl"></i>
+        <div>
+         <p class="text-white font-semibold text-sm">เปิดใช้งาน Google Chat Notification</p>
+         <p class="text-white/40 text-xs">ส่งแจ้งเตือนอัตโนมัติเมื่อค่า kW/TR เกิน Threshold</p>
+        </div>
+       </div><label class="relative inline-flex items-center cursor-pointer"> <input type="checkbox" id="gchat-enable-toggle" class="sr-only peer" onchange="toggleGChat()">
+        <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div></label>
+      </div>
+     
+</div><!-- Monitoring Status & Controls -->
+     <div class="card border border-cyan-500/30 mb-4">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+       <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center"><i class="fa-solid fa-satellite-dish text-cyan-400"></i>
+        </div>
+        <div>
+         <h3 class="text-white font-bold text-sm">🛰️ Auto Monitoring System</h3>
+         <div id="monitoring-status" class="monitoring-status mt-1"><span class="text-white/40 text-xs font-semibold">⚪ รอเริ่มระบบ</span>
+         </div>
+        </div>
+       </div>
+       <div class="flex gap-2 flex-wrap"><button onclick="startAutoMonitoring()" class="px-4 py-2 rounded-xl text-xs font-bold bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white transition flex items-center gap-2"> <i class="fa-solid fa-play"></i> เริ่ม </button> <button onclick="stopAutoMonitoring()" class="px-4 py-2 rounded-xl text-xs font-bold bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition flex items-center gap-2"> <i class="fa-solid fa-stop"></i> หยุด </button> <button onclick="autoFetchAndAnalyze()" class="px-4 py-2 rounded-xl text-xs font-bold bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white transition flex items-center gap-2"> <i class="fa-solid fa-sync"></i> Refresh </button> <button id="mute-alarm-btn" onclick="muteAlarmAction()" class="px-4 py-2 rounded-xl text-xs font-bold bg-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white transition flex items-center gap-2 hidden animate-pulse"> <i class="fa-solid fa-volume-xmark"></i> ปิดเสียง </button>
+       </div>
+      
+</div><!-- Threshold Display -->
+      <div class="bg-black/30 rounded-xl p-4">
+       <div class="flex items-center gap-2 text-white/60 text-xs mb-2"><i class="fa-solid fa-sliders"></i> <span>เกณฑ์แจ้งเตือน:</span>
+       </div>
+       <div class="flex flex-wrap gap-4">
+        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-500"></span> <span class="text-green-400 text-sm font-semibold">ปกติ: kW/TR ≤ <span id="threshold-displรay-normal">0.75</span></span>
+        </div>
+        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-500"></span> <span class="text-red-400 text-sm font-semibold">แจ้งเตือน: kW/TR &gt; <span id="threshold-display-alarm">0.75</span></span>
+        </div>
+       </div>
+      </div>
+     
+</div><!-- Real-time Chart -->
+     <div class="card border border-purple-500/30 mb-4">
+      <div class="flex items-center justify-between mb-4">
+       <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center"><i class="fa-solid fa-chart-line text-purple-400"></i>
+        </div>
+        <div>
+         <h3 class="text-white font-bold text-sm">📈 กราฟ kW/TR Real-time</h3>
+         <p class="text-white/40 text-xs">แสดงข้อมูลย้อนหลัง 20 จุด</p>
+        </div>
+       </div>
+      </div>
+      <div class="chart-container">
+       <canvas id="kwtrChart"></canvas>
+      </div>
+     </div><!-- Live Monitor Display -->
+     <div id="live-monitor-display" class="mb-4">
+      <div class="live-monitor-card">
+       <div class="text-center py-10"><i class="fa-solid fa-satellite-dish text-4xl text-white/20 mb-3"></i>
+        <p class="text-white/40 text-sm">กด "เริ่ม" เพื่อเปิดใช้งาน Auto Monitoring</p>
+       </div>
+      </div>
+     
+</div><!-- Alarm History -->
+     <div class="card border border-red-500/30">
+      <div class="flex items-center justify-between mb-4">
+       <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left text-red-400"></i>
+        </div>
+        <div>
+         <h3 class="text-white font-bold text-sm">📋 ประวัติ Alarm (ล่าสุด 5 รายการ)</h3>
+         <p class="text-white/40 text-xs">บันทึกเมื่อค่า kW/TR เกิน Threshold</p>
+        </div>
+       </div>
+      </div>
+      <div class="overflow-x-auto mb-4">
+       <table class="w-full text-sm">
+        <thead>
+         <tr class="border-b border-white/10">
+          <th class="text-left py-2 px-4 text-white/40 text-xs font-semibold">#</th>
+          <th class="text-left py-2 px-4 text-white/40 text-xs font-semibold">เวลา</th>
+          <th class="text-left py-2 px-4 text-white/40 text-xs font-semibold">kW/TR</th>
+          <th class="text-left py-2 px-4 text-white/40 text-xs font-semibold">Unit</th>
+          <th class="text-left py-2 px-4 text-white/40 text-xs font-semibold">GChat</th>
+         </tr>
+        </thead>
+        <tbody id="alarm-history-table">
+         <tr>
+          <td colspan="5" class="text-center py-6 text-white/40">ไม่มีประวัติ Alarm</td>
+         </tr>
+        </tbody>
+       </table>
+      
+</div><!-- Clear History (Admin Only) -->
+      <div id="admin-clear-section" class="hidden border-t border-white/10 pt-4">
+       <div class="flex flex-wrap items-center gap-3"><label for="clear-password" class="text-white/60 text-xs font-semibold">🔐 Admin ลบประวัติ:</label> <input type="password" id="clear-password" placeholder="ใส่รหัสผ่าน" class="px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white text-xs w-40 focus:outline-none focus:border-red-500"> <button onclick="clearAlarmHistory()" class="px-4 py-2 rounded-lg text-xs font-bold bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition"> <i class="fa-solid fa-trash mr-1"></i> ลบทั้งหมด </button>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+ 
+</main><!-- ADMIN PAGE -->
+  <main id="page-admin" class="page">
+   <div class="page-content">
+    <div class="max-w-6xl mx-auto">
+     <header class="mb-3">
+      <h2 class="text-xl font-bold text-white mb-1"><i class="fa-solid fa-shield-halved text-red-400 mr-2"></i>User Management</h2>
+      <p class="text-white/40 text-xs">Manage user access and permissions</p>
+     </header>
+     <div class="card overflow-hidden overflow-x-auto">
+      <table class="admin-table">
+       <thead id="admin-table-head"></thead>
+       <tbody id="admin-table-body"></tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+  </main>
+  <div id="toast-container"></div>
+  
+<script>
+        // TOAST
+        function showToast(message, type = 'success', duration = 3000) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : 'fa-exclamation-triangle'} mr-2"></i>${message}`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // TRANSLATION
+        const translations = {
+            th: { login_header: "เข้าสู่ระบบ", btn_signin: "เข้าสู่ระบบ", msg_login_fail: "เข้าสู่ระบบไม่สำเร็จ!", msg_fill_all: "กรุณากรอกข้อมูลให้ครบ", msg_approved: "อนุมัติผู้ใช้สำเร็จ", msg_deleted: "ลบผู้ใช้สำเร็จ", col_name: "ผู้ใช้งาน", col_bldg: "อาคาร", col_status: "สถานะ", col_action: "จัดการ", stat_pending: "รออนุมัติ", stat_active: "ปกติ", btn_approve: "อนุมัติ", btn_delete: "ลบ" },
+            en: { login_header: "Sign In", btn_signin: "Sign In", msg_login_fail: "Login Failed!", msg_fill_all: "Please fill all fields", msg_approved: "User approved", msg_deleted: "User deleted", col_name: "User Info", col_bldg: "Building", col_status: "Status", col_action: "Actions", stat_pending: "PENDING", stat_active: "ACTIVE", btn_approve: "APPROVE", btn_delete: "DELETE" }
+        };
+
+        let currentLang = localStorage.getItem('ifems_lang') || 'th';
+
+        function changeLang(lang) {
+            currentLang = lang;
+            localStorage.setItem('ifems_lang', lang);
+            document.querySelectorAll('.lang-btn').forEach(b => {
+                b.classList.toggle('active', b.textContent === lang.toUpperCase());
+            });
+            document.querySelectorAll('[data-lang]').forEach(el => {
+                const key = el.getAttribute('data-lang');
+                if (translations[lang][key]) el.innerText = translations[lang][key];
+            });
+            if (currentUser && currentUser.role === 'admin') renderAdminTable();
+        }
+
+        // AUTH
+        let currentUser = null;
+        let approvedUsers = JSON.parse(localStorage.getItem('ifems_approved')) || [
+            { id: 1, email: 'admin', pass: '1234', name: 'Administrator', bldg: 'all', role: 'admin' }
+        ];
+        let pendingUsers = JSON.parse(localStorage.getItem('ifems_pending')) || [];
+
+        function togglePassword(id, el) {
+            const input = document.getElementById(id);
+            input.type = input.type === "password" ? "text" : "password";
+            el.classList.toggle('fa-eye');
+            el.classList.toggle('fa-eye-slash');
+        }
+
+        function toggleAuth(mode) {
+            document.getElementById('view-login').classList.toggle('hidden', mode === 'reg');
+            document.getElementById('view-register').classList.toggle('hidden', mode === 'login');
+        }
+
+        function doRegister(e) {
+            if (e) e.preventDefault();
+            const name = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const pass = document.getElementById('reg-pass').value;
+            const bldg = document.getElementById('reg-building').value;
+            if (!name || !email || !pass || !bldg) { showToast(translations[currentLang].msg_fill_all, 'warning'); return; }
+            pendingUsers.push({ id: Date.now(), name, email, pass, bldg });
+            localStorage.setItem('ifems_pending', JSON.stringify(pendingUsers));
+            showToast('ส่งคำขอลงทะเบียนสำเร็จ!', 'success');
+            document.getElementById('reg-name').value = '';
+            document.getElementById('reg-email').value = '';
+            document.getElementById('reg-pass').value = '';
+            document.getElementById('reg-building').value = '';
+            toggleAuth('login');
+        }
+
+        function doLogin(e) {
+            if (e) e.preventDefault();
+            const u = document.getElementById('login-email').value.trim();
+            const p = document.getElementById('login-pass').value;
+            const user = approvedUsers.find(x => x.email === u && x.pass === p);
+            if (user) {
+                currentUser = user;
+                document.getElementById('page-auth').classList.remove('active');
+                document.getElementById('main-header').classList.remove('hidden');
+                document.getElementById('main-nav').classList.remove('hidden');
+                document.getElementById('page-monitor').classList.add('active');
+                document.getElementById('user-display-name').innerText = user.name;
+                if (user.role === 'admin') {
+                    document.getElementById('admin-nav-item').classList.remove('hidden');
+                    document.getElementById('admin-clear-section').classList.remove('hidden');
+                    document.getElementById('settings-panel').classList.remove('hidden');
+                    renderAdminTable();
+                }
+                setupMonitorTabs();
+                renderApps();
+                renderAlarmHistory();
+                loadSettings();
+                initChart();
+                startAutoMonitoring();
+                showToast(`ยินดีต้อนรับ ${user.name}!`, 'success');
+            } else {
+                showToast(translations[currentLang].msg_login_fail, 'error');
+            }
+        }
+
+        function doLogout() {
+            stopAutoMonitoring();
+            stopAlarm();
+            currentUser = null;
+            document.getElementById('main-header').classList.add('hidden');
+            document.getElementById('main-nav').classList.add('hidden');
+            document.getElementById('admin-nav-item').classList.add('hidden');
+            document.getElementById('alarm-nav-item').classList.add('hidden');
+            document.getElementById('admin-clear-section').classList.add('hidden');
+            document.getElementById('settings-panel').classList.add('hidden');
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-auth').classList.add('active');
+            document.getElementById('login-email').value = '';
+            document.getElementById('login-pass').value = '';
+            showToast('ออกจากระบบเรียบร้อย', 'success');
+        }
+
+        // SETTINGS
+        let KWTR_THRESHOLD = parseFloat(localStorage.getItem('ifems_threshold')) || 0.75;
+        let GCHAT_SCRIPT_URL = localStorage.getItem('ifems_gchat_script_url') || '';
+        let GCHAT_ENABLED = localStorage.getItem('ifems_gchat_enabled') === 'true';
+
+        function loadSettings() {
+            document.getElementById('threshold-input').value = KWTR_THRESHOLD;
+            document.getElementById('current-threshold').textContent = KWTR_THRESHOLD;
+            document.getElementById('threshold-display-normal').textContent = KWTR_THRESHOLD;
+            document.getElementById('threshold-display-alarm').textContent = KWTR_THRESHOLD;
+            
+            if (currentUser && currentUser.role === 'admin') {
+                if (GCHAT_SCRIPT_URL) {
+                    document.getElementById('gchat-webhook-input').value = GCHAT_SCRIPT_URL;
+                    document.getElementById('gchat-status').innerHTML = '<span class="text-green-400">✓ ตั้งค่าแล้ว</span>';
+                }
+                document.getElementById('gchat-enable-toggle').checked = GCHAT_ENABLED;
+            }
+        }
+
+        function saveThreshold() {
+            const val = parseFloat(document.getElementById('threshold-input').value);
+            if (isNaN(val) || val < 0.1 || val > 2) { showToast('ค่า Threshold ต้องอยู่ระหว่าง 0.1 - 2.0', 'warning'); return; }
+            KWTR_THRESHOLD = val;
+            localStorage.setItem('ifems_threshold', val);
+            document.getElementById('current-threshold').textContent = val;
+            document.getElementById('threshold-display-normal').textContent = val;
+            document.getElementById('threshold-display-alarm').textContent = val;
+            updateChartThreshold();
+            showToast(`✅ บันทึก Threshold = ${val} kW/TR`, 'success');
+        }
+
+        function saveGChatWebhook() {
+            const url = document.getElementById('gchat-webhook-input').value.trim();
+            if (!url) { showToast('กรุณาใส่ Google Apps Script URL', 'warning'); return; }
+            if (!url.includes('script.google.com')) { showToast('⚠️ URL ควรเป็น script.google.com/macros/s/xxx/exec', 'warning'); return; }
+            GCHAT_SCRIPT_URL = url;
+            localStorage.setItem('ifems_gchat_script_url', url);
+            document.getElementById('gchat-status').innerHTML = '<span class="text-green-400">✓ ตั้งค่าแล้ว</span>';
+            showToast('✅ บันทึก Apps Script URL สำเร็จ', 'success');
+        }
+
+        function toggleGChat() {
+            GCHAT_ENABLED = document.getElementById('gchat-enable-toggle').checked;
+            localStorage.setItem('ifems_gchat_enabled', GCHAT_ENABLED);
+            showToast(GCHAT_ENABLED ? '🔔 เปิดใช้งาน Google Chat' : '🔕 ปิดใช้งาน Google Chat', 'success');
+        }
+
+        // Send via Google Apps Script Proxy (no CORS issue!)
+        async function sendGChatNotify(message) {
+            if (!GCHAT_ENABLED || !GCHAT_SCRIPT_URL) return false;
+            try {
+                const payload = {
+                    message: message,
+                    timestamp: new Date().toLocaleString('th-TH')
+                };
+                
+                // Use fetch with no-cors mode or form submission
+                const response = await fetch(GCHAT_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // This bypasses CORS but won't return response
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                // Since no-cors doesn't return response, assume success if no error thrown
+                return true;
+            } catch (error) {
+                console.log('GChat send error:', error);
+                return false;
+            }
+        }
+
+        async function testGChat() {
+            if (!GCHAT_SCRIPT_URL) { showToast('กรุณาใส่ Apps Script URL ก่อน', 'warning'); return; }
+            showToast('📤 กำลังส่งข้อความทดสอบ...', 'success', 2000);
+            
+            const testMessage = `🧪 <b>ทดสอบ iFEMs Alert</b>\n━━━━━━━━━━━━━━━\n📅 ${new Date().toLocaleString('th-TH')}\n✅ ระบบทำงานปกติ`;
+            
+            // Force enable temporarily for test
+            const wasEnabled = GCHAT_ENABLED;
+            GCHAT_ENABLED = true;
+            const sent = await sendGChatNotify(testMessage);
+            GCHAT_ENABLED = wasEnabled;
+            
+            setTimeout(() => {
+                showToast('✅ ส่งคำสั่งทดสอบแล้ว! ตรวจสอบที่ Google Chat', 'success', 4000);
+            }, 1500);
+        }
+
+        // CHART
+        let kwtrChart = null;
+        let chartData = { labels: [], values: [] };
+        const MAX_DATA_POINTS = 20;
+
+        function initChart() {
+            const ctx = document.getElementById('kwtrChart');
+            if (!ctx) return;
+            if (kwtrChart) kwtrChart.destroy();
+            
+            kwtrChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [
+                        { label: 'kW/TR', data: chartData.values, borderColor: '#22d3ee', backgroundColor: 'rgba(34, 211, 238, 0.1)', borderWidth: 3, fill: true, tension: 0.4, pointBackgroundColor: '#22d3ee', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 4 },
+                        { label: 'Threshold', data: new Array(MAX_DATA_POINTS).fill(KWTR_THRESHOLD), borderColor: '#ef4444', borderWidth: 2, borderDash: [5, 5], fill: false, pointRadius: 0 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: 'rgba(255, 255, 255, 0.4)', font: { size: 10 } } },
+                        y: { min: 0, max: Math.max(1.5, KWTR_THRESHOLD + 0.5), grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: 'rgba(255, 255, 255, 0.4)', font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        function updateChart(kwtr, timestamp) {
+            if (!kwtrChart) return;
+            const timeLabel = timestamp.split(' ')[1] || new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            chartData.labels.push(timeLabel);
+            chartData.values.push(kwtr);
+            if (chartData.labels.length > MAX_DATA_POINTS) { chartData.labels.shift(); chartData.values.shift(); }
+            kwtrChart.data.labels = chartData.labels;
+            kwtrChart.data.datasets[0].data = chartData.values;
+            kwtrChart.data.datasets[1].data = new Array(chartData.labels.length).fill(KWTR_THRESHOLD);
+            kwtrChart.data.datasets[0].pointBackgroundColor = chartData.values.map(v => v > KWTR_THRESHOLD ? '#ef4444' : '#22d3ee');
+            kwtrChart.update('none');
+        }
+
+        function updateChartThreshold() {
+            if (!kwtrChart) return;
+            kwtrChart.data.datasets[1].data = new Array(chartData.labels.length).fill(KWTR_THRESHOLD);
+            kwtrChart.options.scales.y.max = Math.max(1.5, KWTR_THRESHOLD + 0.5);
+            kwtrChart.update();
+        }
+
+        // DASHBOARD DATA
+        const monitorDashboards = [
+            { id: 'vm-main', name: '🏥 ViMUT Smart Hospital', url: 'https://lookerstudio.google.com/embed/reporting/4be14bed-81e8-461e-9489-4c94a63dd125/page/p_nfsx6224id', building: 'ViMUT Hospital (VM)' },
+            { id: 'vm-safety', name: '🛡️ Safety & Security', url: 'https://lookerstudio.google.com/embed/reporting/b865dbca-accb-49bc-a306-614245aef600/page/S0IMF', building: 'ViMUT Hospital (VM)' },
+            { id: 'vth-main', name: '🏨 Theptarin Hospital', url: 'https://lookerstudio.google.com/embed/reporting/baa2ac8b-9f66-4276-90c6-be191812184d/page/XJvUF', building: 'ViMUT-Theptarin (VTH)' },
+            { id: 'solar', name: '☀️ Fusion Solar', url: 'https://sg5.fusionsolar.huawei.com/pvmswebsite/login/build/index.html', building: 'all' },
+        ];
+
+        const appData = [
+      // --- ViMUT Hospital (VM) - Dashboards & Analytics ---
+      { hospital: "ViMUT Hospital (VM)", category: "Dashboards & Analytics", name: "Dashboard XRAY Temp", url: "https://www.appsheet.com/start/0788eed4-99c2-4cf0-9dca-26d6f8cc077f", icon: "🌡️", color: "#4CAF50", status: "Deployed" },
+      { hospital: "ViMUT Hospital (VM)", category: "Dashboards & Analytics", name: "iFEMs Dashboard WR", url: "https://www.appsheet.com/start/91a7575e-feee-4aa8-bfa6-57325fa5b3e7", icon: "🖥️", color: "#00BCD4", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Dashboards & Analytics", name: "Daily ENERGY Monitor", url: "https://www.appsheet.com/start/629bda75-2fe2-48a0-b7e4-2834750d7483", icon: "⚡", color: "#8BC34A", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Dashboards & Analytics", name: "STAFF Utilization", url: "https://www.appsheet.com/start/a4842628-e483-4686-bdab-2ec567d7cf2d", icon: "👥", color: "#9C27B0", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Dashboards & Analytics", name: "Dashboard Security", url: "https://www.appsheet.com/start/6228d314-154f-4351-bdfd-7dda53385904", icon: "🛡️", color: "#607D8B", status: "Prototype" },
+      
+      // --- ViMUT Hospital (VM) - Engineering Operations ---
+      { hospital: "ViMUT Hospital (VM)", category: "Engineering Operations", name: "Dashboard VSD Monitor", url: "https://www.appsheet.com/start/7cedd341-6b86-41a3-97cc-cb7ce5c995d5", icon: "🚀", color: "#E91E63", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Engineering Operations", name: "Waste Water System", url: "https://www.appsheet.com/start/c218dfc5-308b-40a0-b25e-7ca16160de56", icon: "♻️", color: "#43A047", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Engineering Operations", name: "PPM Room Electric", url: "https://www.appsheet.com/start/9e4c56ef-b78e-4c88-9938-fa2b4c5d0ecf", icon: "🔌", color: "#F44336", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Engineering Operations", name: "Daily Op Chiller", url: "https://www.appsheet.com/start/0682c57a-71aa-4b05-8349-ae5e148fdcc8", icon: "❄️", color: "#03A9F4", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Engineering Operations", name: "Dashboard PPM Mgmt", url: "https://www.appsheet.com/start/c671f4eb-2e8d-40a9-a393-5ba021833abd", icon: "🚐", color: "#1E88E5", status: "Prototype" },
+      
+      // --- ViMUT Hospital (VM) - Facility & Environment ---
+      { hospital: "ViMUT Hospital (VM)", category: "Facility & Environment", name: "Dashboard PM2.5 CO2", url: "https://www.appsheet.com/start/6e3db8a9-a3f0-4b54-aad4-f07424fbcf9e", icon: "🌿", color: "#43A047", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Facility & Environment", name: "IAQ Critical Room", url: "https://www.appsheet.com/start/8d13183e-3338-4dcc-bfb1-e276f287a7bb", icon: "🌫️", color: "#81D4FA", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Facility & Environment", name: "Dashboard OR Power", url: "https://www.appsheet.com/start/82e663c2-77a0-493e-8c98-b906574f2355", icon: "🏥", color: "#EF5350", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Facility & Environment", name: "Availability of IPD", url: "https://www.appsheet.com/start/83578437-0d5d-4c65-8a6c-83d6b4083d88", icon: "🛌", color: "#5C6BC0", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Facility & Environment", name: "Availability of TOILET", url: "https://www.appsheet.com/start/0d1c9dd6-a704-43f2-b233-e3f54dd873bb", icon: "🚻", color: "#78909C", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Facility & Environment", name: "Availability of General", url: "https://www.appsheet.com/start/62ba4591-44bd-4313-8971-a82908f4d16d", icon: "🏢", color: "#AB47BC", status: "Prototype" },
+      
+      // --- ViMUT Hospital (VM) - Services & Quality ---
+      { hospital: "ViMUT Hospital (VM)", category: "Services & Quality", name: "CS PORTER Services", url: "https://www.appsheet.com/start/f2abdca8-c00f-4b23-b85d-d0b4574c61c7", icon: "🔔", color: "#2196F3", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Services & Quality", name: "ROUND HANDOVER", url: "https://www.appsheet.com/start/e14f0a75-0901-4dd6-8b09-dc1dcad30844", icon: "🔄", color: "#26A69A", status: "Prototype" },
+      
+      // --- ViMUT Hospital (VM) - Assets & Inventory ---
+      { hospital: "ViMUT Hospital (VM)", category: "Assets & Inventory", name: "FEM Asset Mgmt", url: "https://www.appsheet.com/start/e77a838c-a4a4-4d0b-9b50-454708c3004a", icon: "📦", color: "#795548", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Assets & Inventory", name: "General Asset Mgmt", url: "https://www.appsheet.com/start/ec8e9694-b804-4094-88ea-3c31fc58e7dc", icon: "🏛️", color: "#757575", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Assets & Inventory", name: "Holding Asset Mgmt", url: "https://www.appsheet.com/start/d9af023d-f810-4e0b-ad80-89698135f23a", icon: "📂", color: "#FFA000", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Assets & Inventory", name: "INVENTORY Mgmt", url: "https://www.appsheet.com/start/fbd38447-d672-47ab-b675-78b9b9b02f8b", icon: "📝", color: "#546E7A", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Assets & Inventory", name: "MA Contract Mgmt", url: "https://www.appsheet.com/start/0d182eaf-bc5f-488e-826c-1a1a57c6b7db", icon: "🤝", color: "#FB8C00", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Assets & Inventory", name: "Subcontract QC", url: "https://www.appsheet.com/start/0dcb0047-e41d-4cd7-890b-6ba12fa473e9", icon: "✅", color: "#43A047", status: "Prototype" },
+      
+      // --- ViMUT Hospital (VM) - Predictive OM ---
+      { hospital: "ViMUT Hospital (VM)", category: "Predictive OM", name: "Predictive OM Main", url: "https://www.appsheet.com/start/4c9b60fd-b2a2-4d8f-894b-c920e956ab42", icon: "🏠", color: "#FF7043", status: "Prototype" },
+      { hospital: "ViMUT Hospital (VM)", category: "Predictive OM", name: "BANNMOR Predictive", url: "https://www.appsheet.com/start/88a1cd68-3f0e-47a9-91b9-4c48c9c27d04", icon: "🏠", color: "#8D6E63", status: "Prototype" },
+      
+      // --- ViMUT-Theptarin (VTH) - Energy Mgmt ---
+      { hospital: "ViMUT-Theptarin (VTH)", category: "Energy Mgmt", name: "Daily Energy Mgmt", url: "https://www.appsheet.com/start/811802fe-2709-4d36-800e-baa3322c1f9a", icon: "⚡", color: "#FFC107", status: "Prototype" },
+      { hospital: "ViMUT-Theptarin (VTH)", category: "Energy Mgmt", name: "Dashboard Record VSD", url: "https://www.appsheet.com/start/99c26ce6-8153-4cca-baaf-747ccfdf9319", icon: "📈", color: "#3F51B5", status: "Prototype" },
+      
+      // --- ViMUT-Theptarin (VTH) - Main Operations ---
+      { hospital: "ViMUT-Theptarin (VTH)", category: "Main Operations", name: "A Main Operation", url: "https://www.appsheet.com/start/baf57d28-f383-4dc3-901f-0d0876b39278", icon: "🏠", color: "#FF9800", status: "Prototype" },
+      { hospital: "ViMUT-Theptarin (VTH)", category: "Main Operations", name: "B Main Operation", url: "https://www.appsheet.com/start/306a48ad-d7d8-4751-a510-34fb6d7825e9", icon: "🏠", color: "#FF9800", status: "Prototype" },
+      { hospital: "ViMUT-Theptarin (VTH)", category: "Main Operations", name: "Chiller Daily Op", url: "https://www.appsheet.com/start/fbd22fb7-5ff9-4310-b4b2-516b7fbc19cd", icon: "❄️", color: "#03A9F4", status: "Prototype" },
+      { hospital: "ViMUT-Theptarin (VTH)", category: "Main Operations", name: "RCA Risk Monitor", url: "https://www.appsheet.com/start/ba8b12d6-0a09-43c6-964f-e6ebea413258", icon: "⚠️", color: "#D32F2F", status: "Prototype" }
+    ];
+
+
+function setupMonitorTabs() {
+            const container = document.getElementById('monitor-tabs');
+            const displayArea = document.getElementById('monitor-display');
+            if (!container || !displayArea) return;
+
+            // กรอง Dashboard ตามสิทธิ์ผู้ใช้งาน
+            let available = (currentUser.role === 'admin' || currentUser.bldg.toUpperCase() === 'ALL') 
+                ? monitorDashboards : monitorDashboards.filter(d => d.building === currentUser.bldg);
+            
+            // 1. สร้างปุ่ม Tab
+            container.innerHTML = available.map((d, idx) => 
+                `<button onclick="loadMonitor('${d.id}', this)" class="tab-modern ${idx === 0 ? 'active' : ''}">${d.name}</button>`
+            ).join('');
+
+            // 2. สร้าง Container สำหรับทุก Dashboard (ซ่อนไว้ก่อน ยกเว้นอันแรก)
+            displayArea.className = "w-full mt-4";
+            // ค้นหาส่วน displayArea.innerHTML = available.map(...) ในฟังก์ชัน setupMonitorTabs แล้วแทนที่ด้วย:
+	displayArea.innerHTML = available.map((d, idx) => `
+    	<div id="wrapper-${d.id}" class="dashboard-wrapper ${idx === 0 ? '' : 'hidden'} transition-all duration-300">
+        <div class="card-modern bg-black/40 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
+                <div class="flex items-center gap-3">
+                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="text-white font-bold text-xs italic">${d.name}</span>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="window.open('${d.url}', '_blank')" class="px-2 py-1 rounded bg-white/5 text-white/40 hover:text-white transition text-[10px]">
+                        <i class="fa-solid fa-up-right-from-square mr-1"></i> FULL SCREEN
+                    </button>
+                </div>
+            </div>
+            <div class="relative w-full bg-black/20" style="height: 600px; overflow: hidden;">
+                <div class="zoom-controls-overlay">
+                    <div id="zoom-tag-${d.id}" class="zoom-level-tag">70%</div>
+                    <button onclick="changeDashboardZoom('${d.id}', -0.1)" class="btn-zoom" title="Zoom Out"><i class="fa-solid fa-minus"></i></button>
+                    <button onclick="changeDashboardZoom('${d.id}', 0.1)" class="btn-zoom" title="Zoom In"><i class="fa-solid fa-plus"></i></button>
+                    <button onclick="changeDashboardZoom('${d.id}', 'reset')" class="btn-zoom" title="Reset"><i class="fa-solid fa-rotate-left"></i></button>
+                </div>
+                <iframe id="frame-${d.id}" src="${d.url}" 
+                        style="width: 100%; height: 100%; border: none; transform-origin: top left; transition: transform 0.2s ease-out;" 
+                        loading="lazy"></iframe>
+            </div>
+        </div>
+    </div>
+`).join('');
+
+            // ซ่อนปุ่ม "เปิด Dashboard" เดิม
+            const openBtn = document.getElementById('btn-open-dashboard');
+            if (openBtn) openBtn.style.display = 'none';
+
+            // ตั้งค่า Header เริ่มต้น
+            if (available.length > 0) {
+                document.getElementById('monitor-name').textContent = available[0].name;
+                document.getElementById('monitor-building').textContent = currentUser.bldg;
+            }
+        }
+
+        function loadMonitor(dashboardId, btn) {
+            const dashboard = monitorDashboards.find(d => d.id === dashboardId);
+            if (!dashboard) return;
+
+            // 1. จัดการสถานะปุ่ม Tab
+            document.querySelectorAll('.tab-modern').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+
+            // 2. สลับการแสดงผล (ซ่อนทั้งหมด แล้วแสดงเฉพาะอันที่เลือก)
+            document.querySelectorAll('.dashboard-wrapper').forEach(wrapper => {
+                wrapper.classList.add('hidden');
+            });
+            const target = document.getElementById(`wrapper-${dashboardId}`);
+            if (target) {
+                target.classList.remove('hidden');
+            }
+
+            // 3. อัปเดตชื่อที่ Header
+            document.getElementById('monitor-name').textContent = dashboard.name;
+        }
+        function renderApps() {
+            const grid = document.getElementById('app-grid');
+            let filtered = (currentUser.role === 'admin' || currentUser.bldg === 'all') 
+                ? appData : appData.filter(x => x.hospital === currentUser.bldg);
+            if (filtered.length === 0) { grid.innerHTML = '<p class="text-white/40 col-span-full py-10 text-center">ไม่มี App สำหรับอาคารนี้</p>'; return; }
+            grid.innerHTML = filtered.map(app => `
+                <div class="app-card" onclick="window.open('${app.url}', '_blank')">
+                    <div class="app-icon" style="background: ${app.color}20;"><span>${app.icon}</span></div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-white font-bold text-sm truncate">${app.name}</h3>
+                        <p class="text-white/40 text-xs truncate">${app.hospital}</p>
+                        <span class="inline-block mt-2 px-2 py-1 rounded-full text-[10px] font-semibold" style="background: ${app.color}20; color: ${app.color};">${app.category}</span>
+                    </div>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-white/20"></i>
+                </div>
+            `).join('');
+        }
+
+        // ALARM SYSTEM
+        const AUTO_REFRESH_INTERVAL = 30000;
+        let lastDataHash = '';
+        let isAlarmActive = false;
+        let isAlarmMuted = false;
+        let alarmInterval = null;
+        let autoMonitorInterval = null;
+        let alarmHistory = JSON.parse(localStorage.getItem('ifems_alarm_history')) || [];
+        let audioContext = null;
+        let monitoringStatus = 'stopped';
+        let lastAlarmTime = 0;
+        const ALARM_COOLDOWN = 60000;
+
+        function playAlarmSound() {
+            if (isAlarmMuted || !isAlarmActive) return;
+            try {
+                if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.frequency.value = 800;
+                oscillator.type = 'square';
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (e) { console.log('Audio not supported'); }
+        }
+
+        async function startAlarm(kwtr, unit, timestamp) {
+            if (isAlarmActive) return;
+            isAlarmActive = true;
+            isAlarmMuted = false;
+            
+            const gchatSent = await sendGChatAlarm(kwtr, unit, timestamp);
+            addAlarmHistory(kwtr, unit, timestamp, gchatSent);
+            playAlarmSound();
+            alarmInterval = setInterval(playAlarmSound, 2000);
+            
+            showAlarmNavButton();
+            showMuteButton();
+            
+            showToast(`🚨 ALARM: kW/TR = ${kwtr.toFixed(3)} เกินกำหนด!`, 'error', 10000);
+        }
+
+        async function sendGChatAlarm(kwtr, unit, timestamp) {
+            if (!GCHAT_ENABLED || !GCHAT_SCRIPT_URL) return false;
+            const now = Date.now();
+            if (now - lastAlarmTime < ALARM_COOLDOWN) return false;
+            lastAlarmTime = now;
+            
+            const message = `🚨 <b>ค่า kW/TR เกินกำหนด!</b>\n━━━━━━━━━━━━━━━\n📊 kW/TR: <b>${kwtr.toFixed(3)}</b>\n🎯 Threshold: ${KWTR_THRESHOLD}\n🔧 Unit: ${unit}\n📅 เวลา: ${timestamp}\n━━━━━━━━━━━━━━━\n<i>กรุณาตรวจสอบระบบ Chiller</i>`;
+            const sent = await sendGChatNotify(message);
+            if (sent) showToast('📱 ส่งแจ้งเตือน Google Chat แล้ว!', 'success', 3000);
+            return sent;
+        }
+
+        function stopAlarm() {
+            isAlarmActive = false;
+            isAlarmMuted = false;
+            if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
+            hideAlarmNavButton();
+            hideMuteButton();
+        }
+
+        function showAlarmNavButton() {
+            const alarmNav = document.getElementById('alarm-nav-item');
+            if (alarmNav) alarmNav.classList.remove('hidden');
+        }
+
+        function hideAlarmNavButton() {
+            const alarmNav = document.getElementById('alarm-nav-item');
+            if (alarmNav) alarmNav.classList.add('hidden');
+        }
+
+        function showMuteButton() {
+            const muteBtn = document.getElementById('mute-alarm-btn');
+            if (muteBtn) {
+                muteBtn.classList.remove('hidden');
+                muteBtn.disabled = false;
+                muteBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i> ปิดเสียง';
+                muteBtn.classList.remove('bg-gray-600', 'text-gray-300', 'cursor-not-allowed');
+                muteBtn.classList.add('bg-orange-500/20', 'text-orange-400', 'hover:bg-orange-500', 'hover:text-white', 'animate-pulse');
+            }
+        }
+
+        function hideMuteButton() {
+            const muteBtn = document.getElementById('mute-alarm-btn');
+            if (muteBtn) {
+                muteBtn.classList.add('hidden');
+                muteBtn.classList.remove('animate-pulse');
+            }
+        }
+
+        function muteAlarmAction() {
+            isAlarmMuted = true;
+            if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
+            
+            const muteBtn = document.getElementById('mute-alarm-btn');
+            if (muteBtn) {
+                muteBtn.innerHTML = '<i class="fa-solid fa-volume-off"></i> ปิดเสียงแล้ว';
+                muteBtn.classList.remove('animate-pulse', 'bg-orange-500/20', 'text-orange-400', 'hover:bg-orange-500', 'hover:text-white');
+                muteBtn.classList.add('bg-gray-600', 'text-gray-300', 'cursor-not-allowed');
+                muteBtn.disabled = true;
+            }
+            
+            showToast('🔇 ปิดเสียง Alarm แล้ว', 'success');
+        }
+
+        function goToAlarmPage() {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-ai').classList.add('active');
+            document.querySelectorAll('.nav-pill').forEach(n => { if (!n.classList.contains('alarm-nav-btn')) n.classList.remove('active'); });
+            showToast('⚠️ ดูรายละเอียด Alarm ที่หน้านี้', 'warning');
+        }
+
+        function addAlarmHistory(kwtr, unit, timestamp, gchatSent) {
+            alarmHistory.unshift({ id: Date.now(), kwtr, unit, timestamp: timestamp || new Date().toLocaleString('th-TH'), gchatSent });
+            if (alarmHistory.length > 5) alarmHistory = alarmHistory.slice(0, 5);
+            localStorage.setItem('ifems_alarm_history', JSON.stringify(alarmHistory));
+            renderAlarmHistory();
+        }
+
+        function renderAlarmHistory() {
+            const container = document.getElementById('alarm-history-table');
+            if (!container) return;
+            if (alarmHistory.length === 0) { container.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-white/40">ไม่มีประวัติ Alarm</td></tr>'; return; }
+            container.innerHTML = alarmHistory.map((h, i) => `
+                <tr class="border-b border-white/5">
+                    <td class="py-3 px-4 text-white/60 text-xs">${i + 1}</td>
+                    <td class="py-3 px-4 text-white text-xs font-mono">${h.timestamp}</td>
+                    <td class="py-3 px-4"><span class="text-red-400 font-bold">${h.kwtr.toFixed(3)}</span></td>
+                    <td class="py-3 px-4 text-cyan-400 text-xs">Unit ${h.unit}</td>
+                    <td class="py-3 px-4">${h.gchatSent ? '<span class="text-green-400 text-xs">✓ ส่ง GChat แล้ว</span>' : '<span class="text-white/30 text-xs">-</span>'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function clearAlarmHistory() {
+            const input = document.getElementById('clear-password');
+            if (!input) return;
+            if (input.value === 'clear1234') {
+                alarmHistory = [];
+                localStorage.setItem('ifems_alarm_history', JSON.stringify(alarmHistory));
+                renderAlarmHistory();
+                input.value = '';
+                showToast('🗑️ ลบประวัติ Alarm สำเร็จ', 'success');
+            } else {
+                showToast('❌ รหัสผ่านไม่ถูกต้อง', 'error');
+            }
+        }
+
+        // AI MONITORING
+        const DEMO_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRXhGLpJByjDb2FB0qP0tjPT-mWKVSYpnYF8QEtnejrRPckQP4yBSpRi9XpLWZQx40DKTDu6B4cbYH8/pub?gid=187931099&single=true&output=csv";
+
+        async function fetchWithProxy(url) {
+            const proxies = [
+                (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+                (u) => `https://corsproxy.org/?${encodeURIComponent(u)}`,
+                (u) => u
+            ];
+            for (let i = 0; i < proxies.length; i++) {
+                try {
+                    const response = await fetch(proxies[i](url), { method: 'GET', headers: { 'Accept': 'text/csv,text/plain,*/*' } });
+                    if (response.ok) {
+                        const text = await response.text();
+                        if (text && !text.includes('error') && !text.includes('403')) return text;
+                    }
+                } catch (e) { console.log(`Proxy ${i+1} failed`); }
+            }
+            throw new Error('All proxies failed');
+        }
+
+        function hashData(data) {
+            return data.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0).toString();
+        }
+
+        async function autoFetchAndAnalyze() {
+            if (!currentUser) return;
+            try {
+                const csvData = await fetchWithProxy(DEMO_CSV_URL);
+                const currentHash = hashData(csvData);
+                const isDataChanged = lastDataHash !== '' && lastDataHash !== currentHash;
+                lastDataHash = currentHash;
+                
+                const rows = csvData.trim().split('\n');
+                const lastRow = rows[rows.length - 1].split(',');
+                const timestamp = lastRow[0] || new Date().toLocaleString('th-TH');
+                const unit = lastRow[2] || '0';
+                const kwtr = parseFloat(lastRow[6]) || 0;
+                
+                updateLiveMonitor(kwtr, unit, timestamp, isDataChanged);
+                updateChart(kwtr, timestamp);
+                
+                const statusIcon = kwtr > KWTR_THRESHOLD ? '⚠️' : '✅';
+                showToast(`${statusIcon} kW/TR: ${kwtr.toFixed(3)} | Unit: ${unit}`, kwtr > KWTR_THRESHOLD ? 'warning' : 'success', 4000);
+                
+                if (kwtr > KWTR_THRESHOLD) {
+                    startAlarm(kwtr, unit, timestamp);
+                } else {
+                    if (isAlarmActive) {
+                        stopAlarm();
+                        showToast('✅ ค่ากลับสู่ปกติ - Alarm หายไปแล้ว', 'success');
+                    }
+                }
+                
+                monitoringStatus = 'running';
+                updateMonitoringStatus();
+            } catch (error) {
+                console.log('Auto fetch error:', error);
+                monitoringStatus = 'error';
+                updateMonitoringStatus();
+            }
+        }
+
+        function updateLiveMonitor(kwtr, unit, timestamp, isNew) {
+            const container = document.getElementById('live-monitor-display');
+            if (!container) return;
+            const isOver = kwtr > KWTR_THRESHOLD;
+            
+            container.innerHTML = `
+                <div class="live-monitor-card ${isOver ? 'alarm-flash' : ''}">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-xl ${isOver ? 'bg-red-500' : 'bg-green-500'} flex items-center justify-center">
+                                <i class="fa-solid ${isOver ? 'fa-bell fa-shake' : 'fa-check'} text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-white font-bold">Live Monitoring</p>
+                                <p class="text-white/40 text-xs">${timestamp}</p>
+                            </div>
+                        </div>
+                        ${isNew ? '<span class="px-2 py-1 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-400 animate-pulse">NEW DATA</span>' : ''}
+                        <span class="px-3 py-1 rounded-full text-xs font-bold ${isOver ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}">
+                            ${isOver ? '⚠️ ALARM' : '✅ NORMAL'}
+                        </span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-black/30 rounded-xl p-4 text-center">
+                            <p class="text-3xl font-black ${isOver ? 'text-red-400' : 'text-green-400'}">${kwtr.toFixed(3)}</p>
+                            <p class="text-white/40 text-xs mt-1">kW/TR</p>
+                        </div>
+                        <div class="bg-black/30 rounded-xl p-4 text-center">
+                            <p class="text-3xl font-black text-cyan-400">${unit}</p>
+                            <p class="text-white/40 text-xs mt-1">Unit No.</p>
+                        </div>
+                    </div>
+                    
+                    ${isOver ? `
+                    <div class="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30">
+                        <p class="text-red-400 text-sm font-semibold flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            ค่า kW/TR สูงกว่า ${KWTR_THRESHOLD} — ควรตรวจสอบระบบ Chiller
+                        </p>
+                        ${GCHAT_ENABLED ? '<p class="text-white/50 text-xs mt-1"><i class="fa-brands fa-google mr-1"></i> แจ้งเตือนผ่าน Google Chat แล้ว</p>' : ''}
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function updateMonitoringStatus() {
+            const statusEl = document.getElementById('monitoring-status');
+            if (!statusEl) return;
+            const statusMap = {
+                'running': { text: '🟢 กำลังตรวจสอบ (ทุก 30 วินาที)', class: 'text-green-400', dot: true },
+                'stopped': { text: '⚪ หยุดทำงาน', class: 'text-white/40', dot: false },
+                'error': { text: '🔴 เกิดข้อผิดพลาด', class: 'text-red-400', dot: false }
+            };
+            const status = statusMap[monitoringStatus] || statusMap.stopped;
+            statusEl.innerHTML = `${status.dot ? '<div class="pulse-dot"></div>' : ''}<span class="${status.class} text-xs font-semibold">${status.text}</span>`;
+        }
+
+        function startAutoMonitoring() {
+            if (autoMonitorInterval) clearInterval(autoMonitorInterval);
+            autoFetchAndAnalyze();
+            autoMonitorInterval = setInterval(autoFetchAndAnalyze, AUTO_REFRESH_INTERVAL);
+            monitoringStatus = 'running';
+            updateMonitoringStatus();
+            showToast('▶️ เริ่ม Auto Monitoring แล้ว', 'success');
+        }
+
+        function stopAutoMonitoring() {
+            if (autoMonitorInterval) { clearInterval(autoMonitorInterval); autoMonitorInterval = null; }
+            monitoringStatus = 'stopped';
+            updateMonitoringStatus();
+            showToast('⏹️ หยุด Auto Monitoring แล้ว', 'warning');
+        }
+
+        // ADMIN
+        function renderAdminTable() {
+            const head = document.getElementById('admin-table-head');
+            const body = document.getElementById('admin-table-body');
+            const t = translations[currentLang];
+            head.innerHTML = `<tr><th>${t.col_name}</th><th>${t.col_bldg}</th><th>${t.col_status}</th><th class="text-right">${t.col_action}</th></tr>`;
+            let html = "";
+            pendingUsers.forEach(u => {
+                html += `<tr><td><p class="font-bold text-white">${u.name}</p><p class="text-white/40 text-xs">${u.email}</p></td><td class="text-white/60">${u.bldg}</td><td><span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400">${t.stat_pending}</span></td><td class="text-right space-x-2"><button onclick="approveUser(${u.id})" class="px-4 py-2 rounded-lg text-xs font-bold bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white transition">${t.btn_approve}</button><button onclick="confirmDeleteUser(${u.id}, 'pending')" class="px-4 py-2 rounded-lg text-xs font-bold bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition">${t.btn_delete}</button></td></tr>`;
+            });
+            approvedUsers.forEach(u => {
+                if (u.role === 'admin') return;
+                html += `<tr><td><p class="font-bold text-white">${u.name}</p><p class="text-white/40 text-xs">${u.email}</p></td><td class="text-white/60">${u.bldg}</td><td><span class="px-3 py-1 rounded-full text-xs font-bold bg-green-500/20 text-green-400">${t.stat_active}</span></td><td class="text-right"><button onclick="confirmDeleteUser(${u.id}, 'approved')" class="px-4 py-2 rounded-lg text-xs font-bold bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition">${t.btn_delete}</button></td></tr>`;
+            });
+            body.innerHTML = html || '<tr><td colspan="4" class="text-center py-10 text-white/40">No users</td></tr>';
+        }
+
+        function approveUser(id) {
+            const user = pendingUsers.find(x => x.id === id);
+            if (user) {
+                approvedUsers.push({...user, role: 'user'});
+                pendingUsers = pendingUsers.filter(x => x.id !== id);
+                localStorage.setItem('ifems_approved', JSON.stringify(approvedUsers));
+                localStorage.setItem('ifems_pending', JSON.stringify(pendingUsers));
+                renderAdminTable();
+                showToast(translations[currentLang].msg_approved, 'success');
+            }
+        }
+
+        function confirmDeleteUser(id, type) {
+            const row = event.target.closest('tr');
+            const actionCell = row.querySelector('td:last-child');
+            const originalContent = actionCell.innerHTML;
+            actionCell.innerHTML = `<div class="flex gap-2 justify-end items-center"><span class="text-xs text-red-400 font-semibold">ยืนยัน?</span><button onclick="deleteUser(${id}, '${type}')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-500 text-white">ใช่</button><button onclick="this.closest('td').innerHTML = \`${originalContent.replace(/`/g, '\\`')}\`" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-white/10 text-white/60">ไม่</button></div>`;
+        }
+
+        function deleteUser(id, type) {
+            if (type === 'pending') pendingUsers = pendingUsers.filter(x => x.id !== id);
+            else approvedUsers = approvedUsers.filter(x => x.id !== id);
+            localStorage.setItem('ifems_pending', JSON.stringify(pendingUsers));
+            localStorage.setItem('ifems_approved', JSON.stringify(approvedUsers));
+            renderAdminTable();
+            showToast(translations[currentLang].msg_deleted, 'success');
+        }
+
+        // UTILITIES
+        let scales = { monitor: 0.5, iot: 0.5 };
+        
+        function adjustZoom(type, delta) {
+            scales[type] = Math.min(Math.max(scales[type] + delta, 0.3), 1.5);
+            const frame = document.getElementById('iframe-' + type);
+            const p = (1 / scales[type]) * 100;
+            frame.style.width = p + '%';
+            frame.style.height = p + '%';
+            frame.style.transform = `scale(${scales[type]})`;
+        }
+
+        function switchPage(id, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-pill').forEach(n => { if (!n.classList.contains('alarm-nav-btn')) n.classList.remove('active'); });
+            if (el && !el.classList.contains('alarm-nav-btn')) el.classList.add('active');
+        }
+
+        function updateTime() {
+            const timeEl = document.getElementById('header-time-en');
+            if (timeEl) timeEl.innerText = new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        }
+
+        // INIT
+        const defaultConfig = { app_title: 'iFEMs SMART HOSPITAL MANAGEMENT' };
+
+        function applyConfig(config) {
+            const titleEl = document.getElementById('main-title');
+            if (titleEl) titleEl.textContent = config.app_title || defaultConfig.app_title;
+        }
+
+        if (window.elementSdk) {
+            window.elementSdk.init({
+                defaultConfig: defaultConfig,
+                onConfigChange: async (config) => { applyConfig(config); },
+                mapToCapabilities: (config) => ({ recolorables: [], borderables: [], fontEditable: undefined, fontSizeable: undefined }),
+                mapToEditPanelValues: (config) => new Map([["app_title", config.app_title || defaultConfig.app_title]])
+            });
+        }
+
+        document.getElementById('login-form').addEventListener('submit', doLogin);
+        document.getElementById('register-form').addEventListener('submit', doRegister);
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        window.onload = () => {
+            const qrContainer = document.getElementById("qrcode");
+            if (qrContainer && typeof QRCode !== 'undefined') {
+                new QRCode(qrContainer, { text: window.location.href, width: 40, height: 40, colorDark: "#6366f1", colorLight: "#ffffff" });
+            }
+            changeLang(currentLang);
+            applyConfig(defaultConfig);
+        };
+
+// ตัวแปรเก็บค่าซูมของแต่ละ Dashboard
+const dashboardZoomLevels = {};
+
+function changeDashboardZoom(id, delta) {
+    const frame = document.getElementById(`frame-${id}`);
+    const tag = document.getElementById(`zoom-tag-${id}`);
+    if (!frame) return;
+
+    // กำหนดค่าเริ่มต้นถ้ายังไม่มี
+    if (!dashboardZoomLevels[id]) dashboardZoomLevels[id] = 1.0;
+
+    // คำนวณค่าใหม่
+    if (delta === 'reset') {
+        dashboardZoomLevels[id] = 1.0;
+    } else {
+        dashboardZoomLevels[id] = Math.max(0.3, Math.min(2.0, dashboardZoomLevels[id] + delta));
+    }
+
+    const scale = dashboardZoomLevels[id];
+    
+    // ปรับขนาด iframe ให้กว้างขึ้นตามสัดส่วนที่ย่อ เพื่อไม่ให้เหลือขอบขาว
+    // เช่น ถ้าซูม 0.5 (50%) ตัว iframe ต้องมีขนาด 200% เพื่อให้เนื้อหาข้างในยังเต็มพื้นที่
+    const sizePercent = (100 / scale).toFixed(2);
+    
+    frame.style.width = `${sizePercent}%`;
+    frame.style.height = `${sizePercent}%`;
+    frame.style.transform = `scale(${scale})`;
+    
+    // อัปเดตตัวเลขเปอร์เซ็นต์
+    if (tag) tag.textContent = `${Math.round(scale * 100)}%`;
+}
+
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b47b17f934bfd8d',t:'MTc2NjgyNjcxNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
